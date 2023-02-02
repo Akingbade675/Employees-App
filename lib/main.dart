@@ -6,16 +6,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:workmanager/workmanager.dart';
 
 
 void main() async {
   await Hive.initFlutter();
   await Firebase.initializeApp();
-  Workmanager().initialize(
-      callbackDispatcher, // The top level function, aka callbackDispatcher
-      isInDebugMode: false // If enabled it will post a notification whenever the task is running. Handy for debugging tasks
-  );
   AwesomeNotifications().initialize(
       // set the icon to null if you want to use the default app icon
       null,

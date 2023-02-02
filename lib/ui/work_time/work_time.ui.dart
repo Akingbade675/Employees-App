@@ -10,6 +10,7 @@ import 'package:employee/const/color.const.dart';
 import 'package:employee/const/url.const.dart';
 import 'package:employee/gen/assets.gen.dart';
 import 'package:employee/service/api_service.dart';
+import 'package:employee/ui/work_time/lock_timer_notification.dart';
 import 'package:employee/ui/work_time/work_time.enum.dart';
 import 'package:employee/widgets/dialog.widget.dart';
 import 'package:employee/widgets/primary_button.ui.dart';
@@ -17,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:is_lock_screen/is_lock_screen.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class WorkTimePage extends StatefulWidget {
   const WorkTimePage({super.key});
@@ -30,8 +31,11 @@ bool appRunning = false;
 
 class _WorkTimePageState extends State<WorkTimePage>
     with WidgetsBindingObserver {
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  //flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>().requestPermission();
   bool timerRunning = false;
   Timer? _timer;
+  Timer? _lockTimer;
 
   bool _isPaused = true;
   // DateTime? startTime;
@@ -149,8 +153,7 @@ class _WorkTimePageState extends State<WorkTimePage>
       Urls.endWork,
       data: formData,
     );
-    //_timer?.cancel();
-    Workmanager().cancelAll();
+    _timer?.cancel();
     _elapsedTime = 0;
     final box = Hive.box("timer");
     box.clear();
@@ -227,8 +230,14 @@ class _WorkTimePageState extends State<WorkTimePage>
       Urls.endBreak,
       data: formData,
     );
-    _timer ??=
-
+    _timer ??= Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isPaused) {
+        setState(() {
+          _elapsedTime++;
+          box.put("elapsedTime", _elapsedTime);
+        });
+      }
+    });
     workStatus = WorkStatus.endTime;
     saveWorkStatus(WorkStatus.endTime);
     final time = getWorkTime(workStatus ?? WorkStatus.endTime);
@@ -258,6 +267,22 @@ class _WorkTimePageState extends State<WorkTimePage>
             child: CircularProgressIndicator(),
           );
         });
+    // Get cuurent time in minutes
+    TimeOfDay now = TimeOfDay.now();
+    int nowInMinutes = now.hour * 60 + now.minute;
+
+    // Get startTime in minutes
+    TimeOfDay startTime = getWorkTime(WorkStatus.startTime);
+    int startTimeInMinutes = startTime.hour * 60 + startTime.minute;
+    // Check if not yet work time
+    // if (nowInMinutes < startTimeInMinutes) {
+    //   Navigator.pop(context);
+    //   showCustomDialog(context,
+    //       title: "Working Time",
+    //       message: "Your working time has not started",
+    //       buttons: const SizedBox());
+    //   return;
+    // }
     final box = await Hive.openBox("timer");
     _elapsedTime = box.get("elapsedTime", defaultValue: 0);
     _isPaused = false;
@@ -278,11 +303,14 @@ class _WorkTimePageState extends State<WorkTimePage>
       _timer?.cancel();
       _timer = null;
     }
-    await Workmanager().registerPeriodicTask(
-      "background_task",
-      "run the timer every 1 second",
-      frequency: Duration(seconds: 1),
-    );
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isPaused) {
+        setState(() {
+          _elapsedTime++;
+          box.put("elapsedTime", _elapsedTime);
+        });
+      }
+    });
     Navigator.pop(context);
     Flushbar(
       message: response.toString(),
@@ -295,15 +323,14 @@ class _WorkTimePageState extends State<WorkTimePage>
     breakMinutes = box.get("breakMinutes", defaultValue: 0);
     final duration = DateTime.now()
         .difference(DateTime(DateTime.now().year, DateTime.now().month,
-            DateTime.now().day, time.hour, time.minute))
+        DateTime.now().day, time.hour, time.minute))
         .inSeconds;
     log(duration.toString());
     scheduleBreakPopup(duration.abs() + (breakMinutes * 60));
   }
 
   void stop() {
-    //_timer?.cancel();
-    Workmanager().cancelAll();
+    _timer?.cancel();
   }
 
   void pause() async {
@@ -323,25 +350,62 @@ class _WorkTimePageState extends State<WorkTimePage>
     setState(() {});
   }
 
+  void updateNotification() async {
+    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'your channel id', 'your channel name',
+        sound: null,
+        importance: Importance.max, priority: Priority.high);
+    //var iOSPlatformChannelSpecifics = IOSNotificationDetails();
+    var platformChannelSpecifics = NotificationDetails(android:
+    androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+        0, 'WORK TIMER', secondsToTimeString(_elapsedTime), platformChannelSpecifics,
+        payload: _elapsedTime.toString());
+    // await flutterLocalNotificationsPlugin.periodicallyShow(0, 'WORK TIMER',
+    //     secondsToTimeString(_elapsedTime), RepeatInterval.everyMinute, platformChannelSpecifics,
+    //     androidAllowWhileIdle: true);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
       AwesomeNotifications().dismiss(10);
+      _lockTimer?.cancel();
+      flutterLocalNotificationsPlugin.cancelAll();
     } else if (state == AppLifecycleState.paused) {
-      final isLock = await isLockScreen();
-      if (isLock ?? false) {
-        return;
+      final isLock = await isLockScreen() ?? false;
+      if (isLock && _timer != null && !_isPaused) {
+        // Show timer in lock screen
+        // _lockTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+        //   AwesomeNotifications().cancel(8);
+        //   AwesomeNotifications().createNotification(
+        //       content: NotificationContent(
+        //           id: 8,
+        //           channelKey: 'basic_channel',
+        //           locked: true,
+        //           title: 'Timer',
+        //           body: secondsToTimeString(_elapsedTime),
+        //           category: NotificationCategory.Service,
+        //           actionType: ActionType.Default));
+        //   assetsAudioPlayer.stop();
+        // });
+        // assetsAudioPlayer.stop();
+        _lockTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+          updateNotification();
+        });
       }
-      AwesomeNotifications().createNotification(
-          content: NotificationContent(
-              id: 10,
-              channelKey: 'basic_channel',
-              locked: true,
-              title: 'Timer Paused',
-              body: 'Timer is paused. Open the app to resume the timer',
-              category: NotificationCategory.Service,
-              actionType: ActionType.Default));
-      pause();
+      if (!isLock) {
+        AwesomeNotifications().createNotification(
+            content: NotificationContent(
+                id: 10,
+                channelKey: 'basic_channel',
+                locked: true,
+                title: 'Timer Paused',
+                body: 'Timer is paused. Open the app to resume the timer',
+                category: NotificationCategory.Service,
+                actionType: ActionType.Default));
+        pause();
+      }
     } else if (state == AppLifecycleState.inactive) {
       final isLock = await isLockScreen();
       if (isLock ?? false) {
@@ -380,6 +444,7 @@ class _WorkTimePageState extends State<WorkTimePage>
     stop();
     WidgetsBinding.instance.removeObserver(this);
     _timer = null;
+    _lockTimer = null;
     locationStream?.listen((event) {}).cancel();
     locationStream = null;
     Geolocator.getServiceStatusStream().listen((event) {}).cancel();
@@ -391,29 +456,29 @@ class _WorkTimePageState extends State<WorkTimePage>
     super.initState();
 
     // Implementing the work manager
-    void callbackDispatcher() {
-      Workmanager().executeTask((task, inputData) async {
-        switch (task) {
-          case "background_task":
-            _elapsedTime++;
-            Hive.box("timer").put("elapsedTime", _elapsedTime);
-            return Future.value(true);
-        }
-        return Future.value(false);
-      });
-    }
+    // void callbackDispatcher() {
+    //   Workmanager().executeTask((task, inputData) async {
+    //     switch (task) {
+    //       case "background_task":
+    //         _elapsedTime++;
+    //         Hive.box("timer").put("elapsedTime", _elapsedTime);
+    //         return Future.value(true);
+    //     }
+    //     return Future.value(false);
+    //   });
+    // }
 
-
+    LockScreenTimerNotification.initialize(flutterLocalNotificationsPlugin);
     WidgetsBinding.instance.addObserver(this);
     Future.delayed(Duration.zero, () async {
       // final box = await Hive.openBox("timer");
 
 
-        WidgetsFlutterBinding.ensureInitialized();
-        await Workmanager().initialize(
-          callbackDispatcher,
-          isInDebugMode: false,
-        );
+        // WidgetsFlutterBinding.ensureInitialized();
+        // await Workmanager().initialize(
+        //   callbackDispatcher,
+        //   isInDebugMode: false,
+        // );
 
 
       Geolocator.getServiceStatusStream().listen((event) {
@@ -606,7 +671,7 @@ class _WorkTimePageState extends State<WorkTimePage>
                           resume();
                         }
                       } else {
-                        // pause();
+                          pause();
                       }
                     },
               child: _isPaused

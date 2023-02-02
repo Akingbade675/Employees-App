@@ -11,12 +11,15 @@ import 'package:employee/service/api_service.dart';
 import 'package:employee/ui/bottom_nav/bottom_nav.ui.dart';
 import 'package:employee/ui/forgot_password/forgot_password.ui.dart';
 import 'package:employee/widgets/custom_text_field.widget.dart';
+import 'package:employee/widgets/dialog.widget.dart';
 import 'package:employee/widgets/primary_button.ui.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,6 +29,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  bool isDeviceConnected = false;
   bool isLoading = false;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -126,6 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: isLoading
                     ? null
                     : () async {
+                        if (await getConnectivity() == false) return;
                         if (!formKey.currentState!.validate()) return;
                         setState(() {
                           isLoading = true;
@@ -155,6 +160,22 @@ class _LoginPageState extends State<LoginPage> {
                             final res = jsonDecode(response);
                             if (res['status'] == "success") {
                               final box = Hive.box('user');
+
+                              // Checks if another user is logging on one device
+                              if (box.get('empid') != null && box.get('empid') != res["userId"]) {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                                Flushbar(
+                                  flushbarPosition: FlushbarPosition.TOP,
+                                  backgroundColor: Colors.redAccent,
+                                  flushbarStyle: FlushbarStyle.GROUNDED,
+                                  message: "Another user already logged in using this device",
+                                  duration: const Duration(seconds: 3),
+                                ).show(context);
+                                return;
+                              }
+
                               box.put("empid", res["userId"]);
                               box.put("startWorkTime", res["startWorkTime"]);
                               box.put("endWorkTime", res["endWorkTime"]);
@@ -230,6 +251,19 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+   Future<bool> getConnectivity() async {
+    isDeviceConnected = await InternetConnectionChecker().hasConnection;
+    if (!isDeviceConnected) {
+      showCustomDialog(context,
+          title: "No Connection",
+          message: "Check your internet connectivity",
+          buttons: const SizedBox());
+      return false;
+    }
+    else
+      return true;
   }
 }
 
