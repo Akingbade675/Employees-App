@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 import 'dart:developer';
 
@@ -170,7 +172,8 @@ class _LoginPageState extends State<LoginPage> {
                               final box = Hive.box('user');
 
                               // Checks if another user is logging on one device
-                              if (box.get('empid') != null && box.get('empid') != res["userId"]) {
+                              if (box.get('empid') != null &&
+                                  box.get('empid') != res["userId"]) {
                                 setState(() {
                                   isLoading = false;
                                 });
@@ -178,11 +181,15 @@ class _LoginPageState extends State<LoginPage> {
                                   flushbarPosition: FlushbarPosition.TOP,
                                   backgroundColor: Colors.redAccent,
                                   flushbarStyle: FlushbarStyle.GROUNDED,
-                                  message: "Another user already logged in using this device",
+                                  message:
+                                      "Another user already logged in using this device",
                                   duration: const Duration(seconds: 3),
                                 ).show(context);
                                 return;
                               }
+
+                              box.put('phone', emailController.text);
+                              box.put('password', passwordController.text);
 
                               box.put("empid", res["userId"]);
                               box.put("startWorkTime", res["startWorkTime"]);
@@ -191,6 +198,8 @@ class _LoginPageState extends State<LoginPage> {
                               box.put("endBreakTime", res["endBreakTime"]);
                               box.put("lat", res["latitude"]);
                               box.put("long", res["longitude"]);
+                              box.put('radius', res["radius"]);
+
                               final token =
                                   await FirebaseMessaging.instance.getToken();
                               await ApiService().post(Urls.updateToken, data: {
@@ -218,6 +227,17 @@ class _LoginPageState extends State<LoginPage> {
                                   MaterialPageRoute(
                                       builder: (context) => const BottomNav()),
                                   (route) => false);
+                            } else if (res['status'].toString().isNotEmpty) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              Flushbar(
+                                flushbarPosition: FlushbarPosition.TOP,
+                                backgroundColor: Colors.redAccent,
+                                flushbarStyle: FlushbarStyle.GROUNDED,
+                                message: res['status'],
+                                duration: const Duration(seconds: 3),
+                              ).show(context);
                             }
                           }
                         } catch (e) {
@@ -261,7 +281,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-   Future<bool> getConnectivity() async {
+  Future<bool> getConnectivity() async {
     isDeviceConnected = await InternetConnectionChecker().hasConnection;
     if (!isDeviceConnected) {
       showCustomDialog(context,
@@ -269,8 +289,7 @@ class _LoginPageState extends State<LoginPage> {
           message: "Check your internet connectivity",
           buttons: const SizedBox());
       return false;
-    }
-    else
+    } else
       return true;
   }
 }

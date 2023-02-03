@@ -1,9 +1,18 @@
+import 'dart:developer';
+
+import 'package:dio/dio.dart';
 import 'package:employee/const/color.const.dart';
 import 'package:employee/gen/assets.gen.dart';
+import 'package:employee/service/api_service.dart';
 import 'package:employee/ui/emails/emails.ui.dart';
 import 'package:employee/ui/profile/profile.ui.dart';
 import 'package:employee/ui/work_time/work_time.ui.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+
+import '../../const/url.const.dart';
+import '../work_time/work_time.enum.dart';
+import 'bottom_nav.service.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -12,8 +21,38 @@ class BottomNav extends StatefulWidget {
   State<BottomNav> createState() => _BottomNavState();
 }
 
-class _BottomNavState extends State<BottomNav> {
+class _BottomNavState extends State<BottomNav> with WidgetsBindingObserver {
   int index = 1;
+  int counter = 0;
+  PageController? _pageController;
+  bool appActive = false;
+  WorkStatus? workStatus;
+  var state = null;
+
+  @override
+  initState() {
+    super.initState();
+    appActive = true;
+    _pageController = PageController(initialPage: index);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  dispose() {
+    super.dispose();
+    appActive = true;
+    WidgetsBinding.instance.removeObserver(this);
+    _pageController?.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState appState) async {
+    super.didChangeAppLifecycleState(appState);
+    appActive = appState == AppLifecycleState.resumed;
+    state = appState;
+    await MainService.sendStatus(appActive);
+  }
+
   List<Widget> items = [
     const ProfilePage(),
     const WorkTimePage(),
@@ -32,6 +71,9 @@ class _BottomNavState extends State<BottomNav> {
             onTap: (value) {
               setState(() {
                 index = value;
+                _pageController?.animateToPage(index,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.ease);
               });
             },
             items: [
@@ -55,7 +97,12 @@ class _BottomNavState extends State<BottomNav> {
                   label: '')
             ]),
       ),
-      body: items.elementAt(index),
+      body: PageView(
+        allowImplicitScrolling: false,
+        scrollDirection: Axis.horizontal,
+        controller: _pageController,
+        children: items,
+      ),
     );
   }
 }

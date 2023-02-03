@@ -82,7 +82,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   image: DecorationImage(
                       fit: BoxFit.cover,
                       image: NetworkImage(
-                        profile["image"] ??
+                        // profile["image"] ??
                             "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjBqBHVe6sgC-lKbpBQQmOyLKNDasEFqYCUw&usqp=CAU",
                       ))),
             ),

@@ -18,7 +18,7 @@ class _SplashState extends State<Splash> {
   checkUser() async {
     final box = await Hive.openBox("user");
     final empid = box.get("empid");
-
+    // Hive.box('user').clear();
     if (empid != null && empid != "") {
       final token = await FirebaseMessaging.instance.getToken();
       ApiService()
