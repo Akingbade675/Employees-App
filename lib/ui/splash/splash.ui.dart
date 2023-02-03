@@ -39,6 +39,7 @@ class _SplashState extends State<Splash> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    // Hive.box('user').clear();
     Future.delayed(const Duration(seconds: 1), () {
       checkUser();
     });

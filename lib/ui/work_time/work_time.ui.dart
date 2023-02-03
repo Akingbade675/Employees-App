@@ -6,6 +6,7 @@ import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:employee/Utils/extension.dart';
 import 'package:employee/const/color.const.dart';
 import 'package:employee/const/url.const.dart';
 import 'package:employee/gen/assets.gen.dart';
@@ -31,7 +32,8 @@ bool appRunning = false;
 
 class _WorkTimePageState extends State<WorkTimePage>
     with WidgetsBindingObserver {
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   //flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>().requestPermission();
   bool timerRunning = false;
   Timer? _timer;
@@ -54,6 +56,8 @@ class _WorkTimePageState extends State<WorkTimePage>
 
   bool restrictedTimer = false;
   bool isOutsideLocation = false;
+
+  bool isActive = true;
 
   Future<void> lateWork(String minutes) async {
     showDialog(
@@ -323,7 +327,7 @@ class _WorkTimePageState extends State<WorkTimePage>
     breakMinutes = box.get("breakMinutes", defaultValue: 0);
     final duration = DateTime.now()
         .difference(DateTime(DateTime.now().year, DateTime.now().month,
-        DateTime.now().day, time.hour, time.minute))
+            DateTime.now().day, time.hour, time.minute))
         .inSeconds;
     log(duration.toString());
     scheduleBreakPopup(duration.abs() + (breakMinutes * 60));
@@ -353,13 +357,12 @@ class _WorkTimePageState extends State<WorkTimePage>
   void updateNotification() async {
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'your channel id', 'your channel name',
-        sound: null,
-        importance: Importance.max, priority: Priority.high);
+        sound: null, importance: Importance.max, priority: Priority.high);
     //var iOSPlatformChannelSpecifics = IOSNotificationDetails();
-    var platformChannelSpecifics = NotificationDetails(android:
-    androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-        0, 'WORK TIMER', secondsToTimeString(_elapsedTime), platformChannelSpecifics,
+    var platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(0, 'WORK TIMER',
+        _elapsedTime.secondsToTimeString(), platformChannelSpecifics,
         payload: _elapsedTime.toString());
     // await flutterLocalNotificationsPlugin.periodicallyShow(0, 'WORK TIMER',
     //     secondsToTimeString(_elapsedTime), RepeatInterval.everyMinute, platformChannelSpecifics,
@@ -368,6 +371,9 @@ class _WorkTimePageState extends State<WorkTimePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
+
+    print("state 1 = $state");
+
     if (state == AppLifecycleState.resumed) {
       AwesomeNotifications().dismiss(10);
       _lockTimer?.cancel();
@@ -408,6 +414,7 @@ class _WorkTimePageState extends State<WorkTimePage>
       }
     } else if (state == AppLifecycleState.inactive) {
       final isLock = await isLockScreen();
+
       if (isLock ?? false) {
         return;
       } else {
@@ -455,32 +462,11 @@ class _WorkTimePageState extends State<WorkTimePage>
     // TODO: implement initState
     super.initState();
 
-    // Implementing the work manager
-    // void callbackDispatcher() {
-    //   Workmanager().executeTask((task, inputData) async {
-    //     switch (task) {
-    //       case "background_task":
-    //         _elapsedTime++;
-    //         Hive.box("timer").put("elapsedTime", _elapsedTime);
-    //         return Future.value(true);
-    //     }
-    //     return Future.value(false);
-    //   });
-    // }
+    print("hola");
 
     LockScreenTimerNotification.initialize(flutterLocalNotificationsPlugin);
     WidgetsBinding.instance.addObserver(this);
     Future.delayed(Duration.zero, () async {
-      // final box = await Hive.openBox("timer");
-
-
-        // WidgetsFlutterBinding.ensureInitialized();
-        // await Workmanager().initialize(
-        //   callbackDispatcher,
-        //   isInDebugMode: false,
-        // );
-
-
       Geolocator.getServiceStatusStream().listen((event) {
         if (event == ServiceStatus.enabled) {
           setState(() {
@@ -492,6 +478,7 @@ class _WorkTimePageState extends State<WorkTimePage>
           });
         }
       });
+
       locationStream = Geolocator.getPositionStream();
       final userBox = await Hive.openBox("user");
 
@@ -606,7 +593,7 @@ class _WorkTimePageState extends State<WorkTimePage>
               height: 10.0,
             ),
             Text(
-              secondsToTimeString(_elapsedTime),
+              _elapsedTime.secondsToTimeString(),
               style: const TextStyle(fontSize: 68.0),
             ),
             const SizedBox(
@@ -671,7 +658,7 @@ class _WorkTimePageState extends State<WorkTimePage>
                           resume();
                         }
                       } else {
-                          pause();
+                        pause();
                       }
                     },
               child: _isPaused
@@ -837,13 +824,4 @@ class _WorkTimePageState extends State<WorkTimePage>
           loopMode: LoopMode.single);
     });
   }
-}
-
-String secondsToTimeString(int seconds) {
-  int hours = (seconds / 3600).floor();
-  int remainingSeconds = seconds - (hours * 3600);
-  int minutes = (remainingSeconds / 60).floor();
-  remainingSeconds = remainingSeconds - (minutes * 60);
-
-  return "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
 }
