@@ -371,7 +371,6 @@ class _WorkTimePageState extends State<WorkTimePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-
     print("state 1 = $state");
 
     if (state == AppLifecycleState.resumed) {
@@ -488,7 +487,8 @@ class _WorkTimePageState extends State<WorkTimePage>
             event.longitude,
             double.parse(userBox.get("lat", defaultValue: "0") ?? "0"),
             double.parse(userBox.get("long", defaultValue: "0") ?? "0"));
-        if (d > 200 && !isOutsideLocation) {
+        log('d = $d');
+        if (d < 200 && !isOutsideLocation) {
           pause();
           setState(() {
             isOutsideLocation = true;

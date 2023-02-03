@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 import 'dart:developer';
 
@@ -190,7 +192,6 @@ class _LoginPageState extends State<LoginPage> {
                               box.put("long", res["longitude"]);
                               box.put('radius', res["radius"]);
 
-                              
                               final token =
                                   await FirebaseMessaging.instance.getToken();
                               await ApiService().post(Urls.updateToken, data: {
@@ -218,6 +219,17 @@ class _LoginPageState extends State<LoginPage> {
                                   MaterialPageRoute(
                                       builder: (context) => const BottomNav()),
                                   (route) => false);
+                            } else if (res['status'].toString().isNotEmpty) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              Flushbar(
+                                flushbarPosition: FlushbarPosition.TOP,
+                                backgroundColor: Colors.redAccent,
+                                flushbarStyle: FlushbarStyle.GROUNDED,
+                                message: res['status'],
+                                duration: const Duration(seconds: 3),
+                              ).show(context);
                             }
                           }
                         } catch (e) {

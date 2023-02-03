@@ -5,13 +5,9 @@ import 'package:employee/ui/work_time/work_time.enum.dart';
 import 'package:hive/hive.dart';
 
 class MainService {
-
-  //This method is to send break status to the server 
+  //This method is to send break status to the server
   //depending on the application state
   static Future<void> sendStatus(bool appActive) async {
-    final box = await Hive.openBox("timer");
-    box.put("break", !appActive);
-
     saveWorkStatus((appActive) ? WorkStatus.endBreak : WorkStatus.startBreak);
 
     final formData =
@@ -24,7 +20,7 @@ class MainService {
     if (appActive) updateTime();
   }
 
-  //This method is to update the locastorage time 
+  //This method is to update the locastorage time
   //when the user returns back to the app
   static Future<void> updateTime() async {
     final box = Hive.box('user');

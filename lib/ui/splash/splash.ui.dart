@@ -18,7 +18,7 @@ class _SplashState extends State<Splash> {
   checkUser() async {
     final box = await Hive.openBox("user");
     final empid = box.get("empid");
-
+    // Hive.box('user').clear();
     if (empid != null && empid != "") {
       final token = await FirebaseMessaging.instance.getToken();
       ApiService()
@@ -39,7 +39,6 @@ class _SplashState extends State<Splash> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    // Hive.box('user').clear();
     Future.delayed(const Duration(seconds: 1), () {
       checkUser();
     });
