@@ -4,6 +4,7 @@ import 'package:employee/const/color.const.dart';
 import 'package:employee/ui/splash/splash.ui.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -29,12 +30,11 @@ void main() async {
             channelGroupName: 'Basic group')
       ],
       debug: true);
-  runApp(
-    DevicePreview(
-      enabled: false,
-      builder: (context) => const MyApp(), // Wrap your app
-    ),
-  );
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]).then((_) {
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
