@@ -275,14 +275,14 @@ class _WorkTimePageState extends State<WorkTimePage>
     TimeOfDay startTime = getWorkTime(WorkStatus.startTime);
     int startTimeInMinutes = startTime.hour * 60 + startTime.minute;
     // Check if not yet work time
-    // if (nowInMinutes < startTimeInMinutes) {
-    //   Navigator.pop(context);
-    //   showCustomDialog(context,
-    //       title: "Working Time",
-    //       message: "Your working time has not started",
-    //       buttons: const SizedBox());
-    //   return;
-    // }
+    if (nowInMinutes < startTimeInMinutes) {
+      Navigator.pop(context);
+      showCustomDialog(context,
+          title: "Working Time",
+          message: "Your working time has not started",
+          buttons: const SizedBox());
+      return;
+    }
     final box = await Hive.openBox("timer");
     _elapsedTime = box.get("elapsedTime", defaultValue: 0);
     _isPaused = false;
@@ -353,6 +353,7 @@ class _WorkTimePageState extends State<WorkTimePage>
   void updateNotification() async {
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'your channel id', 'your channel name',
+        playSound: false,
         sound: null,
         importance: Importance.max, priority: Priority.high);
     //var iOSPlatformChannelSpecifics = IOSNotificationDetails();
@@ -663,6 +664,8 @@ class _WorkTimePageState extends State<WorkTimePage>
                   : () {
                       if (_isPaused) {
                         if (_elapsedTime == 0) {
+                          assetsAudioPlayer.open(Audio(Assets.audios.alarm),
+                              loopMode: LoopMode.none);
                           start();
                         } else if (workStatus == WorkStatus.startBreak ||
                             _timer == null) {
@@ -766,6 +769,8 @@ class _WorkTimePageState extends State<WorkTimePage>
   scheduleBreakPopup(int duration, {bool isEndWorkPopup = false}) {
     Future.delayed(Duration(seconds: duration), () {
       pause();
+      assetsAudioPlayer.open(Audio(Assets.audios.alarm),
+          loopMode: LoopMode.single);
       showCustomDialog(context, onDimiss: () {
         assetsAudioPlayer.stop();
       },
@@ -827,6 +832,8 @@ class _WorkTimePageState extends State<WorkTimePage>
                         .inSeconds;
                     addBreak(duration.abs() + (breakMinutes * 60));
                   } else {
+                    assetsAudioPlayer.open(Audio(Assets.audios.alarm),
+                        loopMode: LoopMode.none);
                     stopWork();
                   }
                 },

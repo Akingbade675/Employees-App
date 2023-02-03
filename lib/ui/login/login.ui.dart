@@ -53,6 +53,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // formkey
     final formKey = GlobalKey<FormState>();
@@ -140,6 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                             "phone": emailController.text,
                             "password": passwordController.text,
                           });
+                          log('Got to this point');
                           final response = await ApiService()
                               .post(Urls.login, data: formData);
                           log(response.toString());

@@ -55,9 +55,9 @@ class _ProfilePageState extends State<ProfilePage> {
               alignment: Alignment.centerLeft,
               child: GestureDetector(
                 onTap: () async {
-                  final box = await Hive.openBox("user");
+                  //final box = await Hive.openBox("user");
                   final box2 = await Hive.openBox("timer");
-                  box.clear();
+                  //box.clear();
                   box2.clear();
                   Navigator.pushAndRemoveUntil(
                       context,
