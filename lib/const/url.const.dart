@@ -15,4 +15,5 @@ class Urls {
   static const String lateWork = '/late.php';
   static const String updateToken = '/saveFcmToken.php';
   static const String breakList = '/user.php';
+  static const String logout = '/logout.php';
 }

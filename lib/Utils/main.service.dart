@@ -50,7 +50,7 @@ class MainService {
     }
   }
 
-  static Future<void> ringAlarm() async {
+  static Stream<void> ringAlarm() async* {
     final box = Hive.box("timer");
     log('message = 09876');
     // while (true) {
@@ -74,6 +74,13 @@ class MainService {
     } else if (box.get('startedWorking') ?? false) {
       if (nowInMinutes >= endTimeInMinutes) {
         _alarm(1);
+      } else {
+        dynamic breakTime = Hive.box('timer').get('breakTimeList') as List;
+        for (var brk in breakTime) {
+           if (nowInMinutes >= startTimeInMinutes) {
+        _alarm(1);
+      }
+        }
       }
     }
 
@@ -81,8 +88,6 @@ class MainService {
     // log('${WorkTimeService.currentBreakTime()}');
 
     // Get startTime in minutes
-
-   
 
     // Get startBreak in minutes
     TimeOfDay startBreak = getWorkTime(WorkStatus.startBreak);

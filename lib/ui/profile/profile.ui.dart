@@ -1,5 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:employee/const/color.const.dart';
 import 'package:employee/const/url.const.dart';
 import 'package:employee/service/api_service.dart';
@@ -55,16 +58,27 @@ class _ProfilePageState extends State<ProfilePage> {
               alignment: Alignment.centerLeft,
               child: GestureDetector(
                 onTap: () async {
-                  //final box = await Hive.openBox("user");
-                  final box2 = await Hive.openBox("timer");
-                  //box.clear();
-                  box2.clear();
-                  Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginPage()),
-                      (route) => false);
-                },
+                  final box = await Hive.openBox("user");
+                    final box2 = await Hive.openBox("timer");
+                  final formData = FormData.fromMap({
+                    "employee_id": box.get('empid')
+                  });
+                  final response = await ApiService()
+                  
+                      .post(Urls.login, data: formData);
+                  final res = jsonDecode(response);
+                  if (res.errorCode == '0000') {
+                    
+                      box.clear();
+                      box2.clear();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginPage()),
+                        (route) => false);
+                    }
+                  }
+                  ,
                 child: const Text(
                   "Logout",
                   style: TextStyle(
@@ -83,7 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       fit: BoxFit.cover,
                       image: NetworkImage(
                         // profile["image"] ??
-                            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjBqBHVe6sgC-lKbpBQQmOyLKNDasEFqYCUw&usqp=CAU",
+                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSjBqBHVe6sgC-lKbpBQQmOyLKNDasEFqYCUw&usqp=CAU",
                       ))),
             ),
             const SizedBox(
