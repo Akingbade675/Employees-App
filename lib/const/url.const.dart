@@ -14,4 +14,5 @@ class Urls {
   static const String leave = '/leave.php';
   static const String lateWork = '/late.php';
   static const String updateToken = '/saveFcmToken.php';
+  static const String breakList = '/user.php';
 }

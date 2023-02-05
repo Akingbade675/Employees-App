@@ -263,6 +263,7 @@ class _WorkTimePageState extends State<WorkTimePage>
   }
 
   void start() async {
+    log('start 1');
     showDialog(
         barrierDismissible: false,
         context: context,
@@ -271,6 +272,7 @@ class _WorkTimePageState extends State<WorkTimePage>
             child: CircularProgressIndicator(),
           );
         });
+    log('start 2');
     // Get cuurent time in minutes
     TimeOfDay now = TimeOfDay.now();
     int nowInMinutes = now.hour * 60 + now.minute;
@@ -279,7 +281,7 @@ class _WorkTimePageState extends State<WorkTimePage>
     TimeOfDay startTime = getWorkTime(WorkStatus.startTime);
     int startTimeInMinutes = startTime.hour * 60 + startTime.minute;
     // Check if not yet work time
-    if (nowInMinutes < startTimeInMinutes) {
+    if (nowInMinutes > startTimeInMinutes) {
       Navigator.pop(context);
       showCustomDialog(context,
           title: "Working Time",
@@ -288,9 +290,12 @@ class _WorkTimePageState extends State<WorkTimePage>
       return;
     }
     final box = await Hive.openBox("timer");
+    box.put('startedWorking', true);
     _elapsedTime = box.get("elapsedTime", defaultValue: 0);
-    _isPaused = false;
-    timerRunning = true;
+    setState(() {
+      _isPaused = false;
+      timerRunning = true;
+    });
     workStatus = WorkStatus.startBreak;
     saveWorkStatus(workStatus ?? WorkStatus.startBreak);
     if (box.get("break", defaultValue: false)) {
@@ -359,7 +364,8 @@ class _WorkTimePageState extends State<WorkTimePage>
         'your channel id', 'your channel name',
         playSound: false,
         sound: null,
-        importance: Importance.max, priority: Priority.high);
+        importance: Importance.max,
+        priority: Priority.high);
     //var iOSPlatformChannelSpecifics = IOSNotificationDetails();
     var platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);

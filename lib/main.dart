@@ -33,6 +33,7 @@ void main() async {
             channelGroupName: 'Basic group')
       ],
       debug: true);
+      
   runApp(
     DevicePreview(
       enabled: false,

@@ -1,3 +1,4 @@
+import 'package:employee/Utils/extension.dart';
 import 'package:employee/ui/login/login.ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -25,7 +26,7 @@ String getWorkStatusText(WorkStatus status) {
 }
 
 TimeOfDay getWorkTime(WorkStatus status) {
-  return getFormattedTimeOfDay(getWorkTimeLocal(status));
+  return getWorkTimeLocal(status).getFormattedTimeOfDay();
 }
 
 String getWorkTimeLocal(WorkStatus status) {

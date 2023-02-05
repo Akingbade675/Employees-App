@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:employee/Utils/main.service.dart';
 import 'package:employee/const/color.const.dart';
 import 'package:employee/gen/assets.gen.dart';
 import 'package:employee/service/api_service.dart';
@@ -12,7 +13,6 @@ import 'package:hive/hive.dart';
 
 import '../../const/url.const.dart';
 import '../work_time/work_time.enum.dart';
-import 'bottom_nav.service.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -34,6 +34,8 @@ class _BottomNavState extends State<BottomNav> with WidgetsBindingObserver {
     super.initState();
     appActive = true;
     _pageController = PageController(initialPage: index);
+    log('09e77e77e65gsytyg');
+    MainService.ringAlarm();
     WidgetsBinding.instance.addObserver(this);
   }
 

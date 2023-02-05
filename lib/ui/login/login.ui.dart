@@ -188,9 +188,6 @@ class _LoginPageState extends State<LoginPage> {
                                 return;
                               }
 
-                              box.put('phone', emailController.text);
-                              box.put('password', passwordController.text);
-
                               box.put("empid", res["userId"]);
                               box.put("startWorkTime", res["startWorkTime"]);
                               box.put("endWorkTime", res["endWorkTime"]);
@@ -199,6 +196,18 @@ class _LoginPageState extends State<LoginPage> {
                               box.put("lat", res["latitude"]);
                               box.put("long", res["longitude"]);
                               box.put('radius', res["radius"]);
+
+                              Hive.box('timer').put('startedWorking', false);
+
+                              // Call the break time endpoint
+                              var breakTime = await ApiService()
+                                  .post(Urls.breakList, queryParameters: {
+                                'employee_id': res["userId"]
+                              });
+
+                              // Store the list of breaks user has
+                              breakTime = jsonDecode(breakTime);
+                              Hive.box('timer').put('breakTimeList', breakTime['breakTime']);
 
                               final token =
                                   await FirebaseMessaging.instance.getToken();
@@ -292,11 +301,4 @@ class _LoginPageState extends State<LoginPage> {
     } else
       return true;
   }
-}
-
-TimeOfDay getFormattedTimeOfDay(String time) {
-  final timeArray = time.split(":");
-  final hour = int.parse(timeArray[0]);
-  final minute = int.parse(timeArray[1]);
-  return TimeOfDay(hour: hour, minute: minute);
 }
