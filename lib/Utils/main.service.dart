@@ -68,48 +68,35 @@ class MainService {
     // await Future.delayed(const Duration(seconds: 5));
 
     if (!box.get('startedWorking') ?? false) {
-      if (nowInMinutes >= startTimeInMinutes) {
+      if (nowInMinutes == startTimeInMinutes) {
         _alarm(1);
       }
     } else if (box.get('startedWorking') ?? false) {
-      if (nowInMinutes >= endTimeInMinutes) {
+      if (nowInMinutes == endTimeInMinutes) {
         _alarm(1);
       } else {
         dynamic breakTime = Hive.box('timer').get('breakTimeList') as List;
         for (var brk in breakTime) {
-           if (nowInMinutes >= startTimeInMinutes) {
-        _alarm(1);
-      }
+          
+          var t1 = brk.startBreakTime.toString().split(':');
+          var t2 = brk.endBreakTime.toString().split(':');
+          
+          var startBrkInMinutes = t1[0] * 60 + t1[1];
+          var endBrkInMinutes = t2[0] * 60 + t2[1];
+          
+          log('timing = $startBrkInMinutes $endBrkInMinutes');
+
+          if (nowInMinutes == startBrkInMinutes ||
+              nowInMinutes == endBrkInMinutes) {
+            _alarm(1);
+            log('break alarm');
+          }
         }
       }
     }
 
     log('working');
-    // log('${WorkTimeService.currentBreakTime()}');
 
-    // Get startTime in minutes
-
-    // Get startBreak in minutes
-    TimeOfDay startBreak = getWorkTime(WorkStatus.startBreak);
-    int startBreakTimeInMinutes = startBreak.hour * 60 + startBreak.minute;
-
-    // Get endBreak in minutes
-    TimeOfDay endBreak = getWorkTime(WorkStatus.endBreak);
-    int endBreakTimeInMinutes = endBreak.hour * 60 + endBreak.minute;
-
-    if (nowInMinutes == startTimeInMinutes ||
-        nowInMinutes == (startTimeInMinutes + 3)) {
-      box.put('startedWorking', true);
-      _alarm(1);
-      log('start work alarm');
-    } else if (nowInMinutes == startTimeInMinutes ||
-        nowInMinutes == (startTimeInMinutes + 3)) {
-      box.put('startedWorking', true);
-
-      _alarm(1);
-      log('start work alarm');
-    }
-    // }
   }
 
   static _alarm(int count) {

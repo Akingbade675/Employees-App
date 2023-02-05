@@ -28,14 +28,16 @@ class _BottomNavState extends State<BottomNav> with WidgetsBindingObserver {
   bool appActive = false;
   WorkStatus? workStatus;
   var state = null;
-
+  Stream<TimeOfDay>? alarmStream = TimeOfDay.now().minute as Stream<TimeOfDay>?;
   @override
   initState() {
     super.initState();
     appActive = true;
     _pageController = PageController(initialPage: index);
     log('09e77e77e65gsytyg');
-    MainService.ringAlarm();
+    alarmStream?.listen((event) {
+      () => MainService.ringAlarm();
+    });
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -45,6 +47,8 @@ class _BottomNavState extends State<BottomNav> with WidgetsBindingObserver {
     appActive = true;
     WidgetsBinding.instance.removeObserver(this);
     _pageController?.dispose();
+    alarmStream?.listen((event) {});
+    alarmStream = null;
   }
 
   @override
