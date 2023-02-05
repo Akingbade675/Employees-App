@@ -77,13 +77,12 @@ class MainService {
       } else {
         dynamic breakTime = Hive.box('timer').get('breakTimeList') as List;
         for (var brk in breakTime) {
-          
           var t1 = brk.startBreakTime.toString().split(':');
           var t2 = brk.endBreakTime.toString().split(':');
-          
-          var startBrkInMinutes = t1[0] * 60 + t1[1];
-          var endBrkInMinutes = t2[0] * 60 + t2[1];
-          
+
+          int startBrkInMinutes = (t1[0] as int) * 60 + (t1[1] as int);
+          int endBrkInMinutes = (t2[0] as int) * 60 + (t2[1] as int);
+
           log('timing = $startBrkInMinutes $endBrkInMinutes');
 
           if (nowInMinutes == startBrkInMinutes ||
@@ -96,7 +95,6 @@ class MainService {
     }
 
     log('working');
-
   }
 
   static _alarm(int count) {
